@@ -53,11 +53,35 @@ skills/
 
 ## Usage
 
-### With Cursor IDE
+### Quick Start with Converter Tool
+
+Use the built-in converter tool to export rules for your AI IDE:
+
+```bash
+# List all available rules
+node tools/convert-rules.js --list
+
+# Convert specific rules to Cursor format (copy from console)
+node tools/convert-rules.js -f cursor -r frontend/typescript,testing/vitest
+
+# Convert all rules to Windsurf format and save to file
+node tools/convert-rules.js -f windsurf --all -o my-rules.windsurfrules
+
+# Convert to JSON format
+node tools/convert-rules.js -f json --all -o rules.json
+```
+
+**Supported Formats:**
+- `cursor` - Cursor IDE (.cursorrules)
+- `windsurf` - Windsurf IDE (.windsurfrules)
+- `markdown` - Plain Markdown (.md)
+- `json` - JSON format (.json)
+
+### Manual Usage with Cursor IDE
 
 1. Clone this repository to your local machine
 2. In Cursor settings, add the rules folder path to "Rules for AI"
-3. Reference specific rules using `@rules/frontend/vue3` syntax
+3. Reference specific rules using `@rules/frontend/typescript` syntax
 
 ### With Other AI Tools
 

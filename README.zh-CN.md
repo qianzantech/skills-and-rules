@@ -53,11 +53,35 @@ skills/
 
 ## 使用方法
 
-### 在 Cursor IDE 中使用
+### 快速开始 - 使用转换工具
+
+使用内置转换工具将规则导出到你的 AI IDE：
+
+```bash
+# 列出所有可用规则
+node tools/convert-rules.js --list
+
+# 转换指定规则为 Cursor 格式（从控制台复制）
+node tools/convert-rules.js -f cursor -r frontend/typescript,testing/vitest
+
+# 转换所有规则为 Windsurf 格式并保存到文件
+node tools/convert-rules.js -f windsurf --all -o my-rules.windsurfrules
+
+# 转换为 JSON 格式
+node tools/convert-rules.js -f json --all -o rules.json
+```
+
+**支持的格式：**
+- `cursor` - Cursor IDE (.cursorrules)
+- `windsurf` - Windsurf IDE (.windsurfrules)
+- `markdown` - 纯 Markdown (.md)
+- `json` - JSON 格式 (.json)
+
+### 手动使用 - Cursor IDE
 
 1. 将本仓库克隆到本地
 2. 在 Cursor 设置中，将 rules 文件夹路径添加到 "Rules for AI"
-3. 使用 `@rules/frontend/vue3` 语法引用特定规则
+3. 使用 `@rules/frontend/typescript` 语法引用特定规则
 
 ### 在其他 AI 工具中使用
 
