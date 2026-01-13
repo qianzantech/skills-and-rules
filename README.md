@@ -53,22 +53,39 @@ skills/
 
 ## Usage
 
-### Quick Start with Converter Tool
+### 🌐 Web UI (Recommended)
 
-Use the built-in converter tool to export rules for your AI IDE:
+The easiest way to export rules - a visual interface to browse and select rules:
+
+```bash
+# Generate data file (run once or when rules change)
+node tools/generate-data.js
+
+# Start the web server
+node tools/serve.js
+
+# Open http://localhost:3000 in your browser
+```
+
+Features:
+- Browse all rules and skills by category
+- Select individual items or entire categories
+- Export to Cursor, Windsurf, Markdown, or JSON format
+- One-click copy to clipboard
+
+### 💻 CLI Tool
+
+For command-line usage:
 
 ```bash
 # List all available rules
 node tools/convert-rules.js --list
 
-# Convert specific rules to Cursor format (copy from console)
+# Convert specific rules to Cursor format
 node tools/convert-rules.js -f cursor -r frontend/typescript,testing/vitest
 
 # Convert all rules to Windsurf format and save to file
 node tools/convert-rules.js -f windsurf --all -o my-rules.windsurfrules
-
-# Convert to JSON format
-node tools/convert-rules.js -f json --all -o rules.json
 ```
 
 **Supported Formats:**
