@@ -43,35 +43,56 @@ function parseMarkdownFile(filePath) {
 
 /**
  * Recursively find all RULE.md or SKILL.md files
+ * Returns items with full path from project root, including all sibling files
  */
-function findFiles(dir, filename, basePath = '') {
+function findFiles(rootDir, rootName) {
   const results = [];
   
-  if (!fs.existsSync(dir)) {
+  if (!fs.existsSync(rootDir)) {
     return results;
   }
   
-  const items = fs.readdirSync(dir, { withFileTypes: true });
-  
-  for (const item of items) {
-    const fullPath = path.join(dir, item.name);
-    const relativePath = basePath ? `${basePath}/${item.name}` : item.name;
+  function traverse(dir, relativePath) {
+    const items = fs.readdirSync(dir, { withFileTypes: true });
     
-    if (item.isDirectory()) {
-      results.push(...findFiles(fullPath, filename, relativePath));
-    } else if (item.name === filename) {
-      const { metadata, body } = parseMarkdownFile(fullPath);
-      results.push({
-        path: basePath,
-        name: basePath.split('/').pop(),
-        category: basePath.split('/')[0],
-        description: metadata.description || metadata.name || '',
-        globs: metadata.globs || '',
-        content: body
-      });
+    for (const item of items) {
+      const fullPath = path.join(dir, item.name);
+      const itemRelPath = relativePath ? `${relativePath}/${item.name}` : item.name;
+      
+      if (item.isDirectory()) {
+        traverse(fullPath, itemRelPath);
+      } else if (item.name === 'RULE.md' || item.name === 'SKILL.md') {
+        const { metadata, body } = parseMarkdownFile(fullPath);
+        const pathParts = relativePath.split('/');
+        
+        // Get all files in this directory (templates, etc.)
+        const siblingFiles = items
+          .filter(f => !f.isDirectory() && f.name !== item.name)
+          .map(f => ({
+            name: f.name,
+            content: fs.readFileSync(path.join(dir, f.name), 'utf-8')
+          }));
+        
+        results.push({
+          // Full path from project root
+          fullPath: `${rootName}/${relativePath}`,
+          // Original filename found
+          filename: item.name,
+          // Display name (last folder)
+          name: pathParts[pathParts.length - 1],
+          // Category for grouping
+          category: pathParts[0],
+          description: metadata.description || metadata.name || '',
+          globs: metadata.globs || '',
+          content: body,
+          // Additional files in the same folder (templates, etc.)
+          files: siblingFiles
+        });
+      }
     }
   }
   
+  traverse(rootDir, '');
   return results;
 }
 
@@ -81,34 +102,36 @@ function findFiles(dir, filename, basePath = '') {
 function main() {
   console.log('🔍 Scanning for rules and skills...\n');
   
-  // Find rules
-  const rules = findFiles(RULES_DIR, 'RULE.md');
+  // Find rules (pass root name for path prefix)
+  const rules = findFiles(RULES_DIR, 'rules');
   console.log(`Found ${rules.length} rules:`);
-  rules.forEach(r => console.log(`  - ${r.path}`));
+  rules.forEach(r => console.log(`  - ${r.fullPath}`));
   
   // Find skills
-  const skills = findFiles(SKILLS_DIR, 'SKILL.md');
+  const skills = findFiles(SKILLS_DIR, 'skills');
   console.log(`\nFound ${skills.length} skills:`);
-  skills.forEach(s => console.log(`  - ${s.path}`));
+  skills.forEach(s => console.log(`  - ${s.fullPath}`));
   
-  // Group by category
-  const data = {};
+  // Structure: separate rules and skills at top level
+  const data = {
+    rules: {},
+    skills: {}
+  };
   
-  // Group rules
+  // Group rules by category
   for (const rule of rules) {
-    const category = rule.category;
-    if (!data[category]) {
-      data[category] = [];
+    if (!data.rules[rule.category]) {
+      data.rules[rule.category] = [];
     }
-    data[category].push(rule);
+    data.rules[rule.category].push(rule);
   }
   
-  // Add skills as a separate category
-  if (skills.length > 0) {
-    data['skills'] = skills.map(s => ({
-      ...s,
-      path: `skills/${s.path}`
-    }));
+  // Group skills by category
+  for (const skill of skills) {
+    if (!data.skills[skill.category]) {
+      data.skills[skill.category] = [];
+    }
+    data.skills[skill.category].push(skill);
   }
   
   // Write output

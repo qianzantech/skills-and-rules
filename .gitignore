@@ -1,6 +1,9 @@
 # Export output
 dist/
 
+# Generated data
+tools/rules-data.json
+
 # Node
 node_modules/
 

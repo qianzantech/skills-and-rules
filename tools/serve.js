@@ -25,9 +25,21 @@ const MIME_TYPES = {
 };
 
 const FORMAT_CONFIG = {
-  cursor: { ext: '.mdc', folder: '' },
-  windsurf: { ext: '.md', folder: '' },
-  markdown: { ext: '.md', folder: '' }
+  cursor: { 
+    ext: '.mdc',
+    rulesFolder: '.cursor/rules',
+    skillsFolder: '.cursor/skills'
+  },
+  windsurf: { 
+    ext: '.md',
+    rulesFolder: '.windsurf/rules',
+    skillsFolder: '.windsurf/skills'
+  },
+  markdown: { 
+    ext: '.md',
+    rulesFolder: 'rules',
+    skillsFolder: 'skills'
+  }
 };
 
 function cleanDir(dir) {
@@ -37,17 +49,25 @@ function cleanDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function exportItems(items, type, format) {
+function exportItems(items, format) {
   const config = FORMAT_CONFIG[format] || FORMAT_CONFIG.markdown;
-  const baseDir = path.join(DIST_DIR, type);
   const exportedFiles = [];
   
   for (const item of items) {
-    const itemPath = item.path.replace(/^skills\//, '');
-    const filePath = path.join(baseDir, itemPath, `RULE${config.ext}`);
-    const fileDir = path.dirname(filePath);
+    // Determine if this is a rule or skill based on fullPath
+    const isSkill = item.fullPath.startsWith('skills/');
+    const baseFolder = isSkill ? config.skillsFolder : config.rulesFolder;
     
-    fs.mkdirSync(fileDir, { recursive: true });
+    // Flatten: use only the last folder name (item name)
+    const itemName = item.name;
+    const itemDir = path.join(DIST_DIR, baseFolder, itemName);
+    
+    fs.mkdirSync(itemDir, { recursive: true });
+    
+    // Export main file (SKILL.md or RULE.md)
+    const origFilename = item.filename || (isSkill ? 'SKILL.md' : 'RULE.md');
+    const newFilename = origFilename.replace('.md', config.ext);
+    const filePath = path.join(itemDir, newFilename);
     
     let content = '';
     if (format === 'cursor') {
@@ -58,6 +78,15 @@ function exportItems(items, type, format) {
     
     fs.writeFileSync(filePath, content);
     exportedFiles.push(path.relative(PROJECT_DIR, filePath));
+    
+    // Export additional files (templates, etc.)
+    if (item.files && item.files.length > 0) {
+      for (const file of item.files) {
+        const templatePath = path.join(itemDir, file.name);
+        fs.writeFileSync(templatePath, file.content);
+        exportedFiles.push(path.relative(PROJECT_DIR, templatePath));
+      }
+    }
   }
   
   return exportedFiles;
@@ -74,10 +103,10 @@ function handleExportAPI(req, res) {
       
       const files = [];
       if (rules && rules.length > 0) {
-        files.push(...exportItems(rules, 'rules', format));
+        files.push(...exportItems(rules, format));
       }
       if (skills && skills.length > 0) {
-        files.push(...exportItems(skills, 'skills', format));
+        files.push(...exportItems(skills, format));
       }
       
       res.writeHead(200, { 'Content-Type': 'application/json' });

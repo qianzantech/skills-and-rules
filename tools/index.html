@@ -150,14 +150,9 @@
         const response = await fetch('rules-data.json');
         const data = await response.json();
         
-        // Separate rules and skills
-        for (const [category, items] of Object.entries(data)) {
-          if (category === 'skills' || items[0]?.path?.startsWith('skills/')) {
-            allData.skills[category] = items;
-          } else {
-            allData.rules[category] = items;
-          }
-        }
+        // Data is already structured with rules and skills at top level
+        allData.rules = data.rules || {};
+        allData.skills = data.skills || {};
         
         renderTab('rules');
         renderTab('skills');
@@ -196,7 +191,8 @@
             ${items.map(item => `
               <div class="rule-item">
                 <input type="checkbox" 
-                       data-path="${item.path}" 
+                       data-fullpath="${item.fullPath}" 
+                       data-filename="${item.filename}"
                        data-type="${tabName}"
                        data-category="${category}"
                        onchange="updateCounts()">
@@ -261,9 +257,9 @@
     function getSelectedItems(type) {
       const selected = [];
       document.querySelectorAll(`[data-type="${type}"]:checked`).forEach(cb => {
-        const path = cb.dataset.path;
+        const fullPath = cb.dataset.fullpath;
         for (const items of Object.values(allData[type])) {
-          const item = items.find(i => i.path === path);
+          const item = items.find(i => i.fullPath === fullPath);
           if (item) { selected.push(item); break; }
         }
       });
