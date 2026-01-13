@@ -35,6 +35,11 @@ const FORMAT_CONFIG = {
     rulesFolder: '.windsurf/rules',
     skillsFolder: '.windsurf/skills'
   },
+  antigravity: { 
+    ext: '.md',
+    rulesFolder: '.antigravity/rules',
+    skillsFolder: '.antigravity/skills'
+  },
   markdown: { 
     ext: '.md',
     rulesFolder: 'rules',

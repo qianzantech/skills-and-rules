@@ -31,6 +31,12 @@ const FORMATS = {
     wrapper: (content, metadata) => content,
     separator: '\n\n---\n\n'
   },
+  antigravity: {
+    name: 'Antigravity',
+    extension: '.md',
+    wrapper: (content, metadata) => content,
+    separator: '\n\n---\n\n'
+  },
   markdown: {
     name: 'Markdown',
     extension: '.md',
