@@ -10,6 +10,7 @@ const path = require('path');
 
 const RULES_DIR = path.join(__dirname, '..', 'rules');
 const SKILLS_DIR = path.join(__dirname, '..', 'skills');
+const WORKFLOWS_DIR = path.join(__dirname, '..', 'workflows');
 const OUTPUT_FILE = path.join(__dirname, 'rules-data.json');
 
 /**
@@ -17,21 +18,39 @@ const OUTPUT_FILE = path.join(__dirname, 'rules-data.json');
  */
 function parseMarkdownFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
   
   let metadata = {};
   let bodyStart = 0;
   
   // Parse YAML frontmatter
-  if (lines[0] === '---') {
+  if (lines[0].trim() === '---') {
+    let currentKey = null;
+    let currentValue = '';
+    
     for (let i = 1; i < lines.length; i++) {
-      if (lines[i] === '---') {
+      const line = lines[i];
+      if (line.trim() === '---') {
+        // Save last key-value if exists
+        if (currentKey) {
+          metadata[currentKey] = currentValue.replace(/^["']|["']$/g, '').trim();
+        }
         bodyStart = i + 1;
         break;
       }
-      const match = lines[i].match(/^(\w+):\s*(.+)$/);
+      
+      // Check if this is a new key
+      const match = line.match(/^(\w+):\s*(.*)$/);
       if (match) {
-        metadata[match[1]] = match[2].replace(/^["']|["']$/g, '');
+        // Save previous key-value
+        if (currentKey) {
+          metadata[currentKey] = currentValue.replace(/^["']|["']$/g, '').trim();
+        }
+        currentKey = match[1];
+        currentValue = match[2] || '';
+      } else if (currentKey && line.startsWith('  ')) {
+        // Continuation of previous value
+        currentValue += ' ' + line.trim();
       }
     }
   }
@@ -97,6 +116,62 @@ function findFiles(rootDir, rootName) {
 }
 
 /**
+ * Find workflow .md files (workflows are stored as category/name.md)
+ */
+function findWorkflows(rootDir, rootName) {
+  const results = [];
+  
+  if (!fs.existsSync(rootDir)) {
+    return results;
+  }
+  
+  function traverse(dir, relativePath) {
+    const items = fs.readdirSync(dir, { withFileTypes: true });
+    
+    for (const item of items) {
+      const fullPath = path.join(dir, item.name);
+      const itemRelPath = relativePath ? `${relativePath}/${item.name}` : item.name;
+      
+      if (item.isDirectory()) {
+        traverse(fullPath, itemRelPath);
+      } else if (item.name.endsWith('.md')) {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        const lines = content.split('\n');
+        
+        // Extract title from first H1 heading
+        let title = item.name.replace('.md', '');
+        for (const line of lines) {
+          if (line.startsWith('# ')) {
+            title = line.substring(2).trim();
+            break;
+          }
+        }
+        
+        // Workflow name is filename without .md
+        const workflowName = item.name.replace('.md', '');
+        // Category is the parent folder
+        const category = relativePath || 'general';
+        
+        results.push({
+          fullPath: `${rootName}/${itemRelPath}`,
+          filename: item.name,
+          name: workflowName,
+          title: title,
+          category: category,
+          description: title,
+          content: content,
+          // Windsurf workflow command name
+          command: `/${workflowName}`
+        });
+      }
+    }
+  }
+  
+  traverse(rootDir, '');
+  return results;
+}
+
+/**
  * Main function
  */
 function main() {
@@ -112,10 +187,16 @@ function main() {
   console.log(`\nFound ${skills.length} skills:`);
   skills.forEach(s => console.log(`  - ${s.fullPath}`));
   
-  // Structure: separate rules and skills at top level
+  // Find workflows (they are .md files directly, not WORKFLOW.md)
+  const workflows = findWorkflows(WORKFLOWS_DIR, 'workflows');
+  console.log(`\nFound ${workflows.length} workflows:`);
+  workflows.forEach(w => console.log(`  - ${w.fullPath}`));
+  
+  // Structure: separate rules, skills, and workflows at top level
   const data = {
     rules: {},
-    skills: {}
+    skills: {},
+    workflows: {}
   };
   
   // Group rules by category
@@ -134,10 +215,18 @@ function main() {
     data.skills[skill.category].push(skill);
   }
   
+  // Group workflows by category
+  for (const workflow of workflows) {
+    if (!data.workflows[workflow.category]) {
+      data.workflows[workflow.category] = [];
+    }
+    data.workflows[workflow.category].push(workflow);
+  }
+  
   // Write output
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(data, null, 2));
   console.log(`\n✅ Generated: ${OUTPUT_FILE}`);
-  console.log(`\n📌 Total: ${rules.length} rules + ${skills.length} skills`);
+  console.log(`\n📌 Total: ${rules.length} rules + ${skills.length} skills + ${workflows.length} workflows`);
 }
 
 main();

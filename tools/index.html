@@ -84,6 +84,7 @@
         <div class="tabs">
           <button class="tab active" onclick="switchTab('rules')">📋 Rules</button>
           <button class="tab" onclick="switchTab('skills')">⚡ Skills</button>
+          <button class="tab" onclick="switchTab('workflows')">🔄 Workflows</button>
         </div>
         
         <div class="quick-select">
@@ -93,6 +94,7 @@
         
         <div id="rules-tab" class="tab-content active"></div>
         <div id="skills-tab" class="tab-content"></div>
+        <div id="workflows-tab" class="tab-content"></div>
       </div>
       
       <div class="panel export-section">
@@ -124,11 +126,14 @@
         </div>
         
         <div class="selected-count">
-          📋 Rules: <span id="rules-count">0</span> | ⚡ Skills: <span id="skills-count">0</span>
+          📋 Rules: <span id="rules-count">0</span> | ⚡ Skills: <span id="skills-count">0</span> | 🔄 Workflows: <span id="workflows-count">0</span>
         </div>
         
         <button class="export-btn" onclick="exportToServer()" id="export-btn" disabled>
           📦 Export to dist/ folder
+        </button>
+        <button class="export-btn" onclick="exportToClipboard()" id="copy-btn" style="background: #27ae60; margin-top: 8px;" disabled>
+          📋 Copy to Clipboard
         </button>
         
         <div class="result-area" id="result-area" style="display: none;">
@@ -140,13 +145,14 @@
   </div>
 
   <script>
-    let allData = { rules: {}, skills: {} };
+    let allData = { rules: {}, skills: {}, workflows: {} };
     let selectedFormat = 'cursor';
     let currentTab = 'rules';
     
     const categoryIcons = {
       'frontend': '🎨', 'general': '📋', 'testing': '🧪',
-      'abp-framework': '🏗️', 'skills': '⚡'
+      'abp-framework': '🏗️', 'superpowers': '🦸', 'skills': '⚡',
+      'git': '📂', 'debugging': '🐛'
     };
     
     async function loadData() {
@@ -154,12 +160,14 @@
         const response = await fetch('rules-data.json');
         const data = await response.json();
         
-        // Data is already structured with rules and skills at top level
+        // Data is already structured with rules, skills, and workflows at top level
         allData.rules = data.rules || {};
         allData.skills = data.skills || {};
+        allData.workflows = data.workflows || {};
         
         renderTab('rules');
         renderTab('skills');
+        renderTab('workflows');
         updateCounts();
       } catch (e) {
         document.getElementById('rules-tab').innerHTML = `
@@ -215,7 +223,8 @@
       currentTab = tab;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelector(`.tab:nth-child(${tab === 'rules' ? 1 : 2})`).classList.add('active');
+      const tabIndex = tab === 'rules' ? 1 : tab === 'skills' ? 2 : 3;
+      document.querySelector(`.tab:nth-child(${tabIndex})`).classList.add('active');
       document.getElementById(`${tab}-tab`).classList.add('active');
     }
     
@@ -253,9 +262,13 @@
     function updateCounts() {
       const rulesCount = document.querySelectorAll('[data-type="rules"]:checked').length;
       const skillsCount = document.querySelectorAll('[data-type="skills"]:checked').length;
+      const workflowsCount = document.querySelectorAll('[data-type="workflows"]:checked').length;
       document.getElementById('rules-count').textContent = rulesCount;
       document.getElementById('skills-count').textContent = skillsCount;
-      document.getElementById('export-btn').disabled = (rulesCount + skillsCount) === 0;
+      document.getElementById('workflows-count').textContent = workflowsCount;
+      const isEmpty = (rulesCount + skillsCount + workflowsCount) === 0;
+      document.getElementById('export-btn').disabled = isEmpty;
+      document.getElementById('copy-btn').disabled = isEmpty;
     }
     
     function getSelectedItems(type) {
@@ -273,12 +286,13 @@
     async function exportToServer() {
       const rules = getSelectedItems('rules');
       const skills = getSelectedItems('skills');
+      const workflows = getSelectedItems('workflows');
       
       try {
         const response = await fetch('/api/export', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rules, skills, format: selectedFormat })
+          body: JSON.stringify({ rules, skills, workflows, format: selectedFormat })
         });
         
         const result = await response.json();
@@ -288,7 +302,6 @@
           fileList.innerHTML = result.files.map(f => `
             <div class="file-item">
               <span class="path">${f}</span>
-              <button class="copy-file" onclick="copyFilePath('${f}')">Copy</button>
             </div>
           `).join('');
           document.getElementById('result-area').style.display = 'block';
@@ -296,7 +309,57 @@
           alert('Export failed: ' + result.error);
         }
       } catch (e) {
-        alert('Export failed. Make sure the server supports /api/export endpoint.');
+        alert('Export failed. Run: node tools/server.js');
+      }
+    }
+    
+    async function exportToClipboard() {
+      const rules = getSelectedItems('rules');
+      const skills = getSelectedItems('skills');
+      const workflows = getSelectedItems('workflows');
+      
+      // Generate content based on format
+      const separator = '\n\n---\n\n';
+      let output = '';
+      
+      // Add rules
+      if (rules.length > 0) {
+        output += rules.map(r => r.content).join(separator);
+      }
+      
+      // Add skills
+      if (skills.length > 0) {
+        if (output) output += separator;
+        output += skills.map(s => `# ${s.name}\n\n${s.content}`).join(separator);
+      }
+      
+      // Add workflows
+      if (workflows.length > 0) {
+        if (output) output += separator;
+        output += workflows.map(w => w.content).join(separator);
+      }
+      
+      try {
+        await navigator.clipboard.writeText(output);
+        
+        const fileList = document.getElementById('file-list');
+        const items = [...rules, ...skills, ...workflows];
+        fileList.innerHTML = `
+          <div style="color: #27ae60; font-weight: 600; margin-bottom: 12px;">
+            ✅ Copied ${items.length} item(s) to clipboard!
+          </div>
+          ${items.map(f => `
+            <div class="file-item">
+              <span class="path">${f.fullPath}</span>
+            </div>
+          `).join('')}
+          <div style="margin-top: 12px; font-size: 0.85rem; color: #666;">
+            Format: ${selectedFormat.toUpperCase()} | Paste into your IDE rules file
+          </div>
+        `;
+        document.getElementById('result-area').style.display = 'block';
+      } catch (e) {
+        alert('Copy failed: ' + e.message);
       }
     }
     

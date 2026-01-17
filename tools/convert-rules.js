@@ -15,6 +15,8 @@ const fs = require('fs');
 const path = require('path');
 
 const RULES_DIR = path.join(__dirname, '..', 'rules');
+const SKILLS_DIR = path.join(__dirname, '..', 'skills');
+const WORKFLOWS_DIR = path.join(__dirname, '..', 'workflows');
 const OUTPUT_DIR = path.join(__dirname, '..', 'output');
 
 // Supported output formats
@@ -30,6 +32,13 @@ const FORMATS = {
     extension: '.windsurfrules', 
     wrapper: (content, metadata) => content,
     separator: '\n\n---\n\n'
+  },
+  'windsurf-workflow': {
+    name: 'Windsurf Workflow',
+    extension: '.md',
+    wrapper: (content, metadata) => content,
+    separator: '\n\n',
+    isWorkflow: true
   },
   antigravity: {
     name: 'Antigravity',
@@ -221,6 +230,22 @@ function main() {
       case '-l':
         listRules();
         return;
+      case '--list-workflows':
+      case '-lw':
+        listWorkflows();
+        return;
+      case '--workflows':
+      case '-w':
+        exportWorkflows(args[++i], format);
+        return;
+      case '--list-skills':
+      case '-ls':
+        listSkills();
+        return;
+      case '--skills':
+      case '-s':
+        exportSkills(args[++i], format, outputFile);
+        return;
       case '--help':
       case '-h':
         printHelp();
@@ -283,11 +308,262 @@ function main() {
   }
 }
 
+/**
+ * Find all workflow .md files
+ */
+function findAllWorkflows(dir, basePath = '') {
+  const workflows = [];
+  
+  if (!fs.existsSync(dir)) {
+    return workflows;
+  }
+  
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+  
+  for (const item of items) {
+    const fullPath = path.join(dir, item.name);
+    const relativePath = basePath ? `${basePath}/${item.name}` : item.name;
+    
+    if (item.isDirectory()) {
+      workflows.push(...findAllWorkflows(fullPath, relativePath));
+    } else if (item.name.endsWith('.md')) {
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      const lines = content.split('\n');
+      
+      // Extract title from first H1
+      let title = item.name.replace('.md', '');
+      for (const line of lines) {
+        if (line.startsWith('# ')) {
+          title = line.substring(2).trim();
+          break;
+        }
+      }
+      
+      workflows.push({
+        path: relativePath,
+        fullPath: fullPath,
+        category: basePath.split('/')[0] || 'general',
+        name: item.name.replace('.md', ''),
+        title: title,
+        content: content
+      });
+    }
+  }
+  
+  return workflows;
+}
+
+/**
+ * List all workflows
+ */
+function listWorkflows() {
+  const workflows = findAllWorkflows(WORKFLOWS_DIR);
+  
+  console.log('\n🔄 Available Workflows:\n');
+  
+  const byCategory = {};
+  for (const wf of workflows) {
+    if (!byCategory[wf.category]) {
+      byCategory[wf.category] = [];
+    }
+    byCategory[wf.category].push(wf);
+  }
+  
+  for (const [category, categoryWorkflows] of Object.entries(byCategory)) {
+    console.log(`📁 ${category}/`);
+    for (const wf of categoryWorkflows) {
+      console.log(`   └─ ${wf.name} - ${wf.title}`);
+      console.log(`      Command: /${wf.name}`);
+    }
+    console.log('');
+  }
+  
+  console.log(`Total: ${workflows.length} workflows\n`);
+}
+
+/**
+ * Export workflows to Windsurf format
+ */
+function exportWorkflows(workflowPaths, format) {
+  const allWorkflows = findAllWorkflows(WORKFLOWS_DIR);
+  
+  if (allWorkflows.length === 0) {
+    console.error('No workflows found in workflows directory');
+    process.exit(1);
+  }
+  
+  let selectedWorkflows;
+  if (workflowPaths === 'all') {
+    selectedWorkflows = allWorkflows;
+  } else {
+    const paths = workflowPaths.split(',').map(p => p.trim());
+    selectedWorkflows = allWorkflows.filter(wf => 
+      paths.some(p => wf.path.includes(p) || wf.name.includes(p))
+    );
+  }
+  
+  if (selectedWorkflows.length === 0) {
+    console.error('No matching workflows found');
+    console.log('\nUse --list-workflows to see available workflows');
+    process.exit(1);
+  }
+  
+  console.log('\n🔄 Exporting Workflows for Windsurf:\n');
+  console.log('Copy each workflow to: .windsurf/workflows/{name}.md\n');
+  
+  for (const wf of selectedWorkflows) {
+    console.log('='.repeat(60));
+    console.log(`📄 ${wf.name}.md (/${wf.name})`);
+    console.log('='.repeat(60));
+    console.log(wf.content);
+    console.log('');
+  }
+  
+  console.log(`\n✅ ${selectedWorkflows.length} workflow(s) exported`);
+  console.log('\nTo use in Windsurf:');
+  console.log('1. Create .windsurf/workflows/ directory in your project');
+  console.log('2. Save each workflow as {name}.md');
+  console.log('3. Invoke with /{name} command in Cascade');
+}
+
+/**
+ * Find all SKILL.md files
+ */
+function findAllSkills(dir, basePath = '') {
+  const skills = [];
+  
+  if (!fs.existsSync(dir)) {
+    return skills;
+  }
+  
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+  
+  for (const item of items) {
+    const fullPath = path.join(dir, item.name);
+    const relativePath = basePath ? `${basePath}/${item.name}` : item.name;
+    
+    if (item.isDirectory()) {
+      skills.push(...findAllSkills(fullPath, relativePath));
+    } else if (item.name === 'SKILL.md') {
+      const parsed = parseRule(fullPath); // Reuse parseRule for SKILL.md
+      
+      skills.push({
+        path: basePath,
+        fullPath: fullPath,
+        category: basePath.split('/')[0],
+        name: basePath.split('/').pop(),
+        content: parsed.body,  // Use 'body' not 'content'
+        metadata: parsed.metadata
+      });
+    }
+  }
+  
+  return skills;
+}
+
+/**
+ * List all skills
+ */
+function listSkills() {
+  const skills = findAllSkills(SKILLS_DIR);
+  
+  if (skills.length === 0) {
+    console.log('No skills found');
+    return;
+  }
+  
+  console.log('\n🎯 Available Skills:\n');
+  
+  // Group by category
+  const byCategory = {};
+  for (const skill of skills) {
+    if (!byCategory[skill.category]) {
+      byCategory[skill.category] = [];
+    }
+    byCategory[skill.category].push(skill);
+  }
+  
+  for (const category of Object.keys(byCategory).sort()) {
+    console.log(`📁 ${category}/`);
+    for (const skill of byCategory[category]) {
+      const desc = skill.metadata.description ? ` - ${skill.metadata.description.substring(0, 50)}...` : '';
+      console.log(`   └─ ${skill.name}${desc}`);
+    }
+    console.log('');
+  }
+  
+  console.log(`Total: ${skills.length} skills`);
+}
+
+/**
+ * Export skills
+ */
+function exportSkills(skillPaths, format, outputFile) {
+  const allSkills = findAllSkills(SKILLS_DIR);
+  
+  if (allSkills.length === 0) {
+    console.error('No skills found');
+    process.exit(1);
+  }
+  
+  let selectedSkills;
+  if (skillPaths === 'all') {
+    selectedSkills = allSkills;
+  } else {
+    const paths = skillPaths.split(',').map(p => p.trim());
+    selectedSkills = allSkills.filter(skill => 
+      paths.some(p => skill.path.includes(p) || skill.name.includes(p))
+    );
+    
+    if (selectedSkills.length === 0) {
+      console.error('No matching skills found for:', skillPaths);
+      console.log('\nUse --list-skills to see available skills');
+      process.exit(1);
+    }
+  }
+  
+  // Convert skills using the same format as rules
+  const formatConfig = FORMATS[format] || FORMATS.markdown;
+  
+  let output;
+  if (formatConfig.isJson) {
+    output = JSON.stringify({ skills: selectedSkills.map(s => ({
+      path: s.path,
+      name: s.name,
+      category: s.category,
+      description: s.metadata.description,
+      content: s.content
+    })) }, null, 2);
+  } else {
+    output = selectedSkills.map(skill => {
+      return `# ${skill.metadata.name || skill.name}\n\n${skill.content}`;
+    }).join(formatConfig.separator);
+  }
+  
+  if (outputFile) {
+    const outputPath = path.isAbsolute(outputFile) 
+      ? outputFile 
+      : path.join(OUTPUT_DIR, outputFile);
+    
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, output);
+    console.log(`\n✅ ${selectedSkills.length} skill(s) exported to: ${outputPath}`);
+  } else {
+    console.log('\n' + '='.repeat(60));
+    console.log('📋 COPY THE CONTENT BELOW:');
+    console.log('='.repeat(60) + '\n');
+    console.log(output);
+    console.log('\n' + '='.repeat(60));
+    console.log(`✅ ${selectedSkills.length} skill(s) converted to ${formatConfig.name} format`);
+    console.log('='.repeat(60) + '\n');
+  }
+}
+
 function printHelp() {
   console.log(`
-📖 Rule Converter Tool
+📖 Rule, Skill & Workflow Converter Tool
 
-Convert rules to different AI IDE formats for easy copy-paste.
+Convert rules, skills, and workflows to different AI IDE formats.
 
 Usage:
   node tools/convert-rules.js [options]
@@ -296,24 +572,30 @@ Options:
   -f, --format <format>   Output format: cursor, windsurf, markdown, json
                           (default: cursor)
   -r, --rules <rules>     Comma-separated rule paths to include
-                          Example: frontend/typescript,general/clean-code
   -a, --all               Include all rules
+  -s, --skills <skills>   Export skills (use 'all' for all, or comma-separated paths)
+  -w, --workflows <paths> Export workflows (use 'all' for all, or comma-separated names)
   -o, --output <file>     Output to file instead of console
   -l, --list              List all available rules
+  -ls, --list-skills      List all available skills
+  -lw, --list-workflows   List all available workflows
   -h, --help              Show this help message
 
 Examples:
-  # List all available rules
+  # List all available rules/skills/workflows
   node tools/convert-rules.js --list
+  node tools/convert-rules.js --list-skills
+  node tools/convert-rules.js --list-workflows
 
-  # Convert specific rules to Cursor format (print to console)
-  node tools/convert-rules.js -f cursor -r frontend/typescript,testing/vitest
-
-  # Convert all rules to Windsurf format and save to file
+  # Export rules
   node tools/convert-rules.js -f windsurf --all -o my-rules.windsurfrules
 
-  # Convert all rules to JSON format
-  node tools/convert-rules.js -f json --all -o rules.json
+  # Export skills
+  node tools/convert-rules.js --skills all -o all-skills.md
+  node tools/convert-rules.js --skills superpowers/brainstorming,superpowers/tdd
+
+  # Export workflows
+  node tools/convert-rules.js --workflows all
 
 Supported Formats:
   cursor    - Cursor IDE (.cursorrules)

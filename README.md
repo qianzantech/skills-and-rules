@@ -9,6 +9,7 @@ A centralized repository for AI coding assistant rules and skills used in daily 
 This repository contains:
 - **Skills** - Code generation templates and patterns for specific frameworks
 - **Rules** - Coding standards and best practices for AI agents to follow
+- **Workflows** - Reusable step-by-step processes for common development tasks (Windsurf)
 
 ## Tech Stack Coverage
 
@@ -48,6 +49,19 @@ skills/
 │       ├── playwright/      # Playwright E2E testing
 │       └── vue-test-utils/  # Vue component testing
 │
+├── workflows/                 # Windsurf Cascade workflows
+│   ├── abp/                  # ABP Framework workflows
+│   │   └── create-entity.md # Entity creation workflow
+│   ├── git/                  # Git workflows
+│   │   ├── pr-review.md     # Address PR comments
+│   │   └── commit-and-pr.md # Commit and create PR
+│   ├── testing/             # Testing workflows
+│   │   └── run-and-fix.md   # Run tests and fix failures
+│   ├── frontend/            # Frontend workflows
+│   │   └── vue-component.md # Create Vue component
+│   └── debugging/           # Debugging workflows
+│       └── systematic-debug.md
+│
 └── README.md
 ```
 
@@ -81,16 +95,26 @@ For command-line usage:
 # List all available rules
 node tools/convert-rules.js --list
 
+# List all available workflows
+node tools/convert-rules.js --list-workflows
+
 # Convert specific rules to Cursor format
 node tools/convert-rules.js -f cursor -r frontend/typescript,testing/vitest
 
 # Convert all rules to Windsurf format and save to file
 node tools/convert-rules.js -f windsurf --all -o my-rules.windsurfrules
+
+# Export all workflows for Windsurf
+node tools/convert-rules.js --workflows all
+
+# Export specific workflows
+node tools/convert-rules.js --workflows pr-review,run-and-fix
 ```
 
 **Supported Formats:**
 - `cursor` - Cursor IDE (.cursorrules)
 - `windsurf` - Windsurf IDE (.windsurfrules)
+- `windsurf-workflow` - Windsurf Workflows (.md)
 - `markdown` - Plain Markdown (.md)
 - `json` - JSON format (.json)
 
@@ -127,6 +151,24 @@ rule-name/
                        # - Code examples
                        # - Checklist
 ```
+
+### Workflow Format (Windsurf)
+
+Workflows are markdown files that guide Cascade through step-by-step processes:
+
+```
+workflow-name.md       # Workflow with:
+                       # - Title (# heading)
+                       # - Prerequisites (optional)
+                       # - Numbered steps
+                       # - Commands and code blocks
+                       # - Verification checklist
+```
+
+**Usage in Windsurf:**
+1. Copy workflow to `.windsurf/workflows/` in your project
+2. Invoke with `/{workflow-name}` command in Cascade
+3. Cascade will follow the steps sequentially
 
 ## Contributing
 
