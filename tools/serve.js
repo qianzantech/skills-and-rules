@@ -65,20 +65,32 @@ function exportItems(items, format, itemType = 'auto') {
   for (const item of items) {
     // Determine folder based on itemType or fullPath
     let baseFolder;
+    const isSkill = itemType === 'skills' || item.fullPath?.startsWith('skills/');
+    
     if (itemType === 'workflows') {
       baseFolder = config.workflowsFolder;
-    } else if (itemType === 'skills' || item.fullPath.startsWith('skills/')) {
+    } else if (isSkill) {
       baseFolder = config.skillsFolder;
     } else {
       baseFolder = config.rulesFolder;
     }
-    const baseFolderPath = path.join(DIST_DIR, baseFolder);
     
-    fs.mkdirSync(baseFolderPath, { recursive: true });
+    let targetDir, filePath, fileName;
     
-    // Flatten: file named after item (e.g., typescript.md, clean-code.md)
-    const fileName = item.name + config.ext;
-    const filePath = path.join(baseFolderPath, fileName);
+    if (isSkill) {
+      // Skills: each skill in its own folder with SKILL.md
+      // Structure: .windsurf/skills/<skill-name>/SKILL.md
+      targetDir = path.join(DIST_DIR, baseFolder, item.name);
+      fileName = 'SKILL.md';
+      filePath = path.join(targetDir, fileName);
+    } else {
+      // Rules/Workflows: flat structure
+      targetDir = path.join(DIST_DIR, baseFolder);
+      fileName = item.name + config.ext;
+      filePath = path.join(targetDir, fileName);
+    }
+    
+    fs.mkdirSync(targetDir, { recursive: true });
     
     let content = '';
     if (format === 'cursor') {
@@ -90,13 +102,19 @@ function exportItems(items, format, itemType = 'auto') {
     fs.writeFileSync(filePath, content);
     exportedFiles.push(path.relative(PROJECT_DIR, filePath));
     
-    // Export additional files (templates, etc.) with item name prefix
+    // Export additional files (templates, etc.)
     if (item.files && item.files.length > 0) {
       for (const file of item.files) {
-        const templateFileName = `${item.name}--${file.name}`;
-        const templatePath = path.join(baseFolderPath, templateFileName);
-        fs.writeFileSync(templatePath, file.content);
-        exportedFiles.push(path.relative(PROJECT_DIR, templatePath));
+        let supportFilePath;
+        if (isSkill) {
+          // Skills: supporting files go in the skill folder with original name
+          supportFilePath = path.join(targetDir, file.name);
+        } else {
+          // Rules: prefix with item name
+          supportFilePath = path.join(targetDir, `${item.name}--${file.name}`);
+        }
+        fs.writeFileSync(supportFilePath, file.content);
+        exportedFiles.push(path.relative(PROJECT_DIR, supportFilePath));
       }
     }
   }
