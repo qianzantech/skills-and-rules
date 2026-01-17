@@ -28,22 +28,26 @@ const FORMAT_CONFIG = {
   cursor: { 
     ext: '.mdc',
     rulesFolder: '.cursor/rules',
-    skillsFolder: '.cursor/skills'
+    skillsFolder: '.cursor/skills',
+    workflowsFolder: '.cursor/workflows'
   },
   windsurf: { 
     ext: '.md',
     rulesFolder: '.windsurf/rules',
-    skillsFolder: '.windsurf/skills'
+    skillsFolder: '.windsurf/skills',
+    workflowsFolder: '.windsurf/workflows'
   },
   antigravity: { 
     ext: '.md',
     rulesFolder: '.antigravity/rules',
-    skillsFolder: '.antigravity/skills'
+    skillsFolder: '.antigravity/skills',
+    workflowsFolder: '.antigravity/workflows'
   },
   markdown: { 
     ext: '.md',
     rulesFolder: 'rules',
-    skillsFolder: 'skills'
+    skillsFolder: 'skills',
+    workflowsFolder: 'workflows'
   }
 };
 
@@ -54,14 +58,20 @@ function cleanDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function exportItems(items, format) {
+function exportItems(items, format, itemType = 'auto') {
   const config = FORMAT_CONFIG[format] || FORMAT_CONFIG.markdown;
   const exportedFiles = [];
   
   for (const item of items) {
-    // Determine if this is a rule or skill based on fullPath
-    const isSkill = item.fullPath.startsWith('skills/');
-    const baseFolder = isSkill ? config.skillsFolder : config.rulesFolder;
+    // Determine folder based on itemType or fullPath
+    let baseFolder;
+    if (itemType === 'workflows') {
+      baseFolder = config.workflowsFolder;
+    } else if (itemType === 'skills' || item.fullPath.startsWith('skills/')) {
+      baseFolder = config.skillsFolder;
+    } else {
+      baseFolder = config.rulesFolder;
+    }
     const baseFolderPath = path.join(DIST_DIR, baseFolder);
     
     fs.mkdirSync(baseFolderPath, { recursive: true });
@@ -99,16 +109,19 @@ function handleExportAPI(req, res) {
   req.on('data', chunk => body += chunk);
   req.on('end', () => {
     try {
-      const { rules, skills, format } = JSON.parse(body);
+      const { rules, skills, workflows, format } = JSON.parse(body);
       
       cleanDir(DIST_DIR);
       
       const files = [];
       if (rules && rules.length > 0) {
-        files.push(...exportItems(rules, format));
+        files.push(...exportItems(rules, format, 'rules'));
       }
       if (skills && skills.length > 0) {
-        files.push(...exportItems(skills, format));
+        files.push(...exportItems(skills, format, 'skills'));
+      }
+      if (workflows && workflows.length > 0) {
+        files.push(...exportItems(workflows, format, 'workflows'));
       }
       
       res.writeHead(200, { 'Content-Type': 'application/json' });

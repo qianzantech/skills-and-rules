@@ -5,5 +5,3 @@ You MUST use this before any creative work - creating features, building compone
 ## Instructions
 
 Invoke the **brainstorming** skill and follow it exactly.
-
-> Skill location: skills/superpowers/brainstorming/SKILL.md
