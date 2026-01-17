@@ -9,6 +9,7 @@
 本仓库包含：
 - **Skills（技能）** - 针对特定框架的代码生成模板和模式
 - **Rules（规则）** - AI 代理遵循的编码标准和最佳实践
+- **Workflows（工作流）** - 常见开发任务的可复用分步流程（Windsurf）
 
 ## 技术栈覆盖
 
@@ -24,14 +25,31 @@
 ```
 skills/
 ├── skills/                    # 代码生成模板
-│   └── abp-framework/        # ABP 框架技能
-│       ├── abp-entity/       # 实体与聚合根模板
-│       ├── abp-application-service/  # 应用服务模式
-│       ├── abp-domain-service/       # 领域服务模式
-│       ├── abp-repository/           # 仓储模式
-│       ├── abp-event-handler/        # 事件处理器模板
-│       ├── abp-cache-service/        # 缓存服务模式
-│       └── abp-background-worker/    # 后台作业模板
+│   ├── abp-framework/        # ABP 框架技能
+│   │   ├── abp-entity/       # 实体与聚合根模板
+│   │   ├── abp-application-service/  # 应用服务模式
+│   │   ├── abp-domain-service/       # 领域服务模式
+│   │   ├── abp-repository/           # 仓储模式
+│   │   ├── abp-event-handler/        # 事件处理器模板
+│   │   ├── abp-cache-service/        # 缓存服务模式
+│   │   ├── abp-background-worker/    # 后台作业模板
+│   │   └── abp-folder-structure/     # 项目结构模式
+│   │
+│   └── superpowers/          # AI 代理超能力（来自 Anthropic）
+│       ├── brainstorming/            # 头脑风暴技术
+│       ├── dispatching-parallel-agents/  # 并行任务执行
+│       ├── executing-plans/          # 计划执行模式
+│       ├── finishing-a-development-branch/  # 分支完成
+│       ├── receiving-code-review/    # 处理评审反馈
+│       ├── requesting-code-review/   # 创建评审请求
+│       ├── subagent-driven-development/  # 多代理模式
+│       ├── systematic-debugging/     # 调试方法论
+│       ├── test-driven-development/  # TDD 模式
+│       ├── using-git-worktrees/      # Git worktree 用法
+│       ├── using-superpowers/        # 超能力使用指南
+│       ├── verification-before-completion/  # 验证模式
+│       ├── writing-plans/            # 计划编写技术
+│       └── writing-skills/           # 技能创建指南
 │
 ├── rules/                     # AI 代理编码规则
 │   ├── frontend/             # 前端开发规则
@@ -41,12 +59,18 @@ skills/
 │   ├── general/              # 通用编码规则
 │   │   ├── clean-code/      # 整洁代码原则
 │   │   ├── coding-standards/ # 编码标准
-│   │   └── git-workflow/    # Git 工作流规范
+│   │   ├── git-workflow/    # Git 工作流规范
+│   │   └── superpowers/     # AI 代理超能力规则
 │   │
 │   └── testing/              # 测试规则
 │       ├── vitest/          # Vitest 单元测试
 │       ├── playwright/      # Playwright E2E 测试
 │       └── vue-test-utils/  # Vue 组件测试
+│
+├── workflows/                 # Windsurf Cascade 工作流
+│   ├── brainstorm.md        # 头脑风暴工作流
+│   ├── execute-plan.md      # 计划执行工作流
+│   └── write-plan.md        # 计划编写工作流
 │
 └── README.md
 ```
@@ -91,6 +115,7 @@ node tools/convert-rules.js -f windsurf --all -o my-rules.windsurfrules
 **支持的格式：**
 - `cursor` - Cursor IDE (.cursorrules)
 - `windsurf` - Windsurf IDE (.windsurfrules)
+- `windsurf-workflow` - Windsurf 工作流 (.md)
 - `markdown` - 纯 Markdown (.md)
 - `json` - JSON 格式 (.json)
 

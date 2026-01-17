@@ -25,14 +25,31 @@ This repository contains:
 ```
 skills/
 ├── skills/                    # Code generation templates
-│   └── abp-framework/        # ABP Framework skills
-│       ├── abp-entity/       # Entity & aggregate root templates
-│       ├── abp-application-service/  # AppService patterns
-│       ├── abp-domain-service/       # Domain service patterns
-│       ├── abp-repository/           # Repository patterns
-│       ├── abp-event-handler/        # Event handler templates
-│       ├── abp-cache-service/        # Cache service patterns
-│       └── abp-background-worker/    # Background job templates
+│   ├── abp-framework/        # ABP Framework skills
+│   │   ├── abp-entity/       # Entity & aggregate root templates
+│   │   ├── abp-application-service/  # AppService patterns
+│   │   ├── abp-domain-service/       # Domain service patterns
+│   │   ├── abp-repository/           # Repository patterns
+│   │   ├── abp-event-handler/        # Event handler templates
+│   │   ├── abp-cache-service/        # Cache service patterns
+│   │   ├── abp-background-worker/    # Background job templates
+│   │   └── abp-folder-structure/     # Project structure patterns
+│   │
+│   └── superpowers/          # AI Agent superpowers (from Anthropic)
+│       ├── brainstorming/            # Ideation techniques
+│       ├── dispatching-parallel-agents/  # Parallel task execution
+│       ├── executing-plans/          # Plan execution patterns
+│       ├── finishing-a-development-branch/  # Branch completion
+│       ├── receiving-code-review/    # Handling review feedback
+│       ├── requesting-code-review/   # Creating review requests
+│       ├── subagent-driven-development/  # Multi-agent patterns
+│       ├── systematic-debugging/     # Debug methodologies
+│       ├── test-driven-development/  # TDD patterns
+│       ├── using-git-worktrees/      # Git worktree usage
+│       ├── using-superpowers/        # Superpower usage guide
+│       ├── verification-before-completion/  # Verification patterns
+│       ├── writing-plans/            # Planning techniques
+│       └── writing-skills/           # Skill creation guide
 │
 ├── rules/                     # AI agent coding rules
 │   ├── frontend/             # Frontend development rules
@@ -42,7 +59,8 @@ skills/
 │   ├── general/              # General coding rules
 │   │   ├── clean-code/      # Clean code principles
 │   │   ├── coding-standards/ # General standards
-│   │   └── git-workflow/    # Git conventions
+│   │   ├── git-workflow/    # Git conventions
+│   │   └── superpowers/     # AI agent superpowers rule
 │   │
 │   └── testing/              # Testing rules
 │       ├── vitest/          # Vitest unit testing
@@ -50,17 +68,9 @@ skills/
 │       └── vue-test-utils/  # Vue component testing
 │
 ├── workflows/                 # Windsurf Cascade workflows
-│   ├── abp/                  # ABP Framework workflows
-│   │   └── create-entity.md # Entity creation workflow
-│   ├── git/                  # Git workflows
-│   │   ├── pr-review.md     # Address PR comments
-│   │   └── commit-and-pr.md # Commit and create PR
-│   ├── testing/             # Testing workflows
-│   │   └── run-and-fix.md   # Run tests and fix failures
-│   ├── frontend/            # Frontend workflows
-│   │   └── vue-component.md # Create Vue component
-│   └── debugging/           # Debugging workflows
-│       └── systematic-debug.md
+│   ├── brainstorm.md        # Brainstorming workflow
+│   ├── execute-plan.md      # Plan execution workflow
+│   └── write-plan.md        # Plan writing workflow
 │
 └── README.md
 ```
