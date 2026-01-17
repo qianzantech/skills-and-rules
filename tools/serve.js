@@ -62,17 +62,13 @@ function exportItems(items, format) {
     // Determine if this is a rule or skill based on fullPath
     const isSkill = item.fullPath.startsWith('skills/');
     const baseFolder = isSkill ? config.skillsFolder : config.rulesFolder;
+    const baseFolderPath = path.join(DIST_DIR, baseFolder);
     
-    // Flatten: use only the last folder name (item name)
-    const itemName = item.name;
-    const itemDir = path.join(DIST_DIR, baseFolder, itemName);
+    fs.mkdirSync(baseFolderPath, { recursive: true });
     
-    fs.mkdirSync(itemDir, { recursive: true });
-    
-    // Export main file (SKILL.md or RULE.md)
-    const origFilename = item.filename || (isSkill ? 'SKILL.md' : 'RULE.md');
-    const newFilename = origFilename.replace('.md', config.ext);
-    const filePath = path.join(itemDir, newFilename);
+    // Flatten: file named after item (e.g., typescript.md, clean-code.md)
+    const fileName = item.name + config.ext;
+    const filePath = path.join(baseFolderPath, fileName);
     
     let content = '';
     if (format === 'cursor') {
@@ -84,10 +80,11 @@ function exportItems(items, format) {
     fs.writeFileSync(filePath, content);
     exportedFiles.push(path.relative(PROJECT_DIR, filePath));
     
-    // Export additional files (templates, etc.)
+    // Export additional files (templates, etc.) with item name prefix
     if (item.files && item.files.length > 0) {
       for (const file of item.files) {
-        const templatePath = path.join(itemDir, file.name);
+        const templateFileName = `${item.name}--${file.name}`;
+        const templatePath = path.join(baseFolderPath, templateFileName);
         fs.writeFileSync(templatePath, file.content);
         exportedFiles.push(path.relative(PROJECT_DIR, templatePath));
       }
