@@ -164,21 +164,52 @@ rule-name/
 
 ### Workflow Format (Windsurf)
 
-Workflows are markdown files that guide Cascade through step-by-step processes:
+Workflows are markdown files that guide Cascade through step-by-step processes. They invoke skills to ensure consistent, high-quality execution.
 
-```
-workflow-name.md       # Workflow with:
-                       # - Title (# heading)
-                       # - Prerequisites (optional)
-                       # - Numbered steps
-                       # - Commands and code blocks
-                       # - Verification checklist
-```
+**Available Workflows:**
+
+| Workflow | Command | Description |
+|----------|---------|-------------|
+| Brainstorm | `/brainstorm` | Explore requirements and design before any creative work |
+| Write Plan | `/write-plan` | Create detailed implementation plan with bite-sized tasks |
+| Execute Plan | `/execute-plan` | Execute plan in batches with review checkpoints |
 
 **Usage in Windsurf:**
-1. Copy workflow to `.windsurf/workflows/` in your project
-2. Invoke with `/{workflow-name}` command in Cascade
-3. Cascade will follow the steps sequentially
+
+1. **Export workflows** using the Web UI or CLI:
+   ```bash
+   # Via Web UI: Select workflows and export to Windsurf format
+   node tools/serve.js
+   
+   # Via CLI: Export all workflows
+   node tools/convert-rules.js --workflows all
+   ```
+
+2. **Copy to your project:**
+   ```
+   your-project/
+   └── .windsurf/
+       └── workflows/
+           ├── brainstorm.md
+           ├── write-plan.md
+           └── execute-plan.md
+   ```
+
+3. **Invoke in Cascade:**
+   - Type `/brainstorm` before starting any new feature
+   - Type `/write-plan` to create a detailed implementation plan
+   - Type `/execute-plan` to execute your plan step by step
+
+**Workflow Structure:**
+```markdown
+# Workflow Title
+
+Brief description of when to use this workflow.
+
+## Instructions
+
+Invoke the **skill-name** skill and follow it exactly.
+```
 
 ## Contributing
 

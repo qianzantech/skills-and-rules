@@ -153,6 +153,55 @@ rule-name/
                        # - 检查清单
 ```
 
+### 工作流格式（Windsurf）
+
+工作流是引导 Cascade 执行分步流程的 Markdown 文件。它们通过调用技能来确保一致、高质量的执行。
+
+**可用工作流：**
+
+| 工作流 | 命令 | 描述 |
+|--------|------|------|
+| Brainstorm | `/brainstorm` | 在任何创造性工作之前探索需求和设计 |
+| Write Plan | `/write-plan` | 创建包含小任务的详细实施计划 |
+| Execute Plan | `/execute-plan` | 分批执行计划，设置检查点 |
+
+**在 Windsurf 中使用：**
+
+1. **导出工作流**（通过 Web UI 或 CLI）：
+   ```bash
+   # 通过 Web UI：选择工作流并导出为 Windsurf 格式
+   node tools/serve.js
+   
+   # 通过 CLI：导出所有工作流
+   node tools/convert-rules.js --workflows all
+   ```
+
+2. **复制到项目：**
+   ```
+   your-project/
+   └── .windsurf/
+       └── workflows/
+           ├── brainstorm.md
+           ├── write-plan.md
+           └── execute-plan.md
+   ```
+
+3. **在 Cascade 中调用：**
+   - 输入 `/brainstorm` 开始新功能前的头脑风暴
+   - 输入 `/write-plan` 创建详细实施计划
+   - 输入 `/execute-plan` 分步执行计划
+
+**工作流结构：**
+```markdown
+# 工作流标题
+
+简要描述何时使用此工作流。
+
+## Instructions
+
+Invoke the **skill-name** skill and follow it exactly.
+```
+
 ## 贡献指南
 
 ### 添加新技能
